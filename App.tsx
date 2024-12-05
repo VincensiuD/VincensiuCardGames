@@ -1,13 +1,14 @@
 import * as React from 'react';
+import {SettingsProvider} from './global/context/Settings';
+import {RootStack} from './navigation/navigation';
 import {NavigationContainer} from '@react-navigation/native';
-import {Text, View} from 'react-native';
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <View>
-        <Text>Welcome To Vincensiu's game</Text>
-      </View>
-    </NavigationContainer>
+    <SettingsProvider>
+      <NavigationContainer>
+        <RootStack />
+      </NavigationContainer>
+    </SettingsProvider>
   );
 }
