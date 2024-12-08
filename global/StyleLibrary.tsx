@@ -16,5 +16,9 @@ export const GlobalStyle = StyleSheet.create({
   },
   MainText: {
     color: 'black',
-  }
+  },
+  Card: {
+    width: 48,
+    height: 72,
+  },
 });
