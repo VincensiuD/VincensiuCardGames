@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import {Card} from './interfaces';
+import {Card, PokerTierResult} from './interfaces';
 
 export function checkFlush(cards: Card[]): boolean {
   for (let index = 1; index < cards.length; index++) {
@@ -52,31 +52,32 @@ function getKeyByValue(
   return keyResult ? strArrToIntArr(keyResult) : [];
 }
 
-export function checkPair(tally: Record<string, number>, sortedCardValues: number[]) {
-  if (Object.keys(tally).length === sortedCardValues.length) {
-    return {result: 0, tieBreaker: sortCardValues}; //no pair
+export function checkPair(tally: Record<string, number>, sortedCardValues: number[], cardAmount: number): PokerTierResult {
+  if (Object.keys(tally).length === cardAmount) {
+    return {tier: 0, tieBreaker: sortedCardValues}; //no pair
   }
-  else if (Object.keys(tally).length === sortedCardValues.length - 1) {
+  else if (Object.keys(tally).length === cardAmount - 1) {
     const pair = getKeyByValue(tally, 2);
     const tieBreaker = rearrangeCardsByPair(sortedCardValues, pair[0]);
-    return {result: 1, tieBreaker}; //p
-  } else if (Object.keys(tally).length === sortedCardValues.length - 2) {
+    return {tier: 1, tieBreaker}; //p
+  } else if (Object.keys(tally).length === cardAmount - 2) {
     if (Object.values(tally).includes(3)) {
         const threeKind = getKeyByValue(tally, 3);
-        return {result: 3, tieBreaker: [threeKind]}; // 3ok
+        return {tier: 3, tieBreaker: threeKind}; // 3ok
     }
     const pair = getKeyByValue(tally, 2);
     const tieBreaker = rearrangeCardsByPair(sortedCardValues, pair[0], pair[1]);
-    return {result: 2, tieBreaker}; //2p
+
+    return {tier: 2, tieBreaker}; //2p
   } else if (
     Object.keys(tally).length === 2 &&
     Object.values(tally).includes(4)
   ) {
     const fourKind = getKeyByValue(tally, 4);
-    return {result: 7, tieBreaker:[fourKind]}; //4k
+    return {tier: 7, tieBreaker:fourKind}; //4k
   }
   const threeKind = getKeyByValue(tally,3);
-  return {result: 6, tieBreaker: [threeKind]}; //fh
+  return {tier: 6, tieBreaker: threeKind}; //fh
 }
 
 export function rearrangeCardsByPair(arr: number[], pairValue: number, pairValue2?:number){
@@ -84,14 +85,13 @@ export function rearrangeCardsByPair(arr: number[], pairValue: number, pairValue
         const pairArray = arr.filter(num => num === pairValue);
 
         if(pairValue2){
-            const pairArray2 = arr.filter(num => num === pairValue2);
 
-            const remainingValues = arr.filter(num => num !== pairValue || num !== pairValue2).sort((a, b) => b - a);
+            const remainingValues = arr.filter(num => num !== pairValue && num !== pairValue2).sort((a, b) => b - a);
 
             if(pairValue > pairValue2){
-                return [...pairArray, ...pairArray2, ...remainingValues];
+                return [pairValue, pairValue2, ...remainingValues];
             }
-            return [...pairArray2, ...pairArray, ...remainingValues];
+            return [pairValue2, pairValue, ...remainingValues];
         }
         const remainingValues = arr.filter(num => num !== pairValue).sort((a, b) => b - a);
         return [...pairArray, ...remainingValues];
@@ -145,7 +145,7 @@ export function checkRoyalFlush(sortedCardValues: number[]){
     return false;
 }
 
-export function checkPokerTier(cards: Card[]) {
+export function checkPokerTier(cards: Card[]): PokerTierResult {
 
   const cardsTally: Record<string,number> = tallyCards(cards);
   const keysArr: number[] = strArrToIntArr(Object.keys(cardsTally));
@@ -168,8 +168,84 @@ export function checkPokerTier(cards: Card[]) {
         return {tier:4, tieBreaker: sortedCardValues};
     }
 
-    const checkPairResult = checkPair(cardsTally, sortedCardValues);
+    const checkPairResult = checkPair(cardsTally, sortedCardValues, cards.length);
 
     return checkPairResult;
 
 }
+
+export function PairPlusPayout(bet: number, tier: number){
+    switch(tier){
+        case 1:
+        return bet;
+        case 3:
+        return 30 * bet;
+        case 5:
+        return 4 * bet;
+        case 4:
+        return 6 * bet;
+        case 8:
+        return 40 * bet;
+        default:
+        return 0;
+    }
+}
+
+export function AnteBonusPayout(bet: number, tier: number){
+    switch(tier){
+        case 4:
+        return bet;
+        case 3:
+        return bet * 4;
+        case 8:
+        return bet * 5;
+        default:
+        return 0;
+    }
+}
+
+export function ThreeCardWinLose(dealerResult, playerResult): number {
+
+    function processTier(tierNumber: number){
+
+    switch(tierNumber){
+        case 5:
+            return 15;
+        case 4:
+            return 16;
+        case 3:
+            return 17;
+        case 8:
+            return 18;
+        default:
+            return tierNumber;
+    }
+    }
+
+    if(dealerResult.tier === 0 && dealerResult.tieBreaker[0] < 12){
+        return 1; // player win
+    }
+
+    let dealerTier = processTier(dealerResult.tier);
+    let playerTier = processTier(playerResult.tier);
+
+    if(dealerTier > playerTier){
+        return 0; //dealer win
+    }
+    else if(dealerTier < playerTier){
+        return 1; //player win
+    }
+    else if (dealerTier === playerTier){
+        for (let index = 0; index < dealerResult.tieBreaker.length; index++) {
+            if(dealerResult.tieBreaker[index] > playerResult.tieBreaker[index]){
+                return 0;
+            }
+            else if(dealerResult.tieBreaker[index] < playerResult.tieBreaker[index]){
+                return 1;
+            }
+        }
+    }
+    return 2; //stand off
+
+    }
+
