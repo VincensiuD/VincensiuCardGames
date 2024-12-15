@@ -233,7 +233,11 @@ export function ThreeCardScreen() {
       <View style={styles.body}>
         <View style={styles.resultContainer}>
           <Text style={styles.resultTitle}>Dealer Hand:</Text>
-          {showTierResult && <Text>{pokerDictionary(dealerResult)}</Text>}
+          {showTierResult && (
+            <Text style={styles.resultText}>
+              {pokerDictionary(dealerResult)}
+            </Text>
+          )}
           <View style={styles.cardView}>
             <View
               style={[
@@ -277,111 +281,108 @@ export function ThreeCardScreen() {
                 )}
               </View>
             </View>
-            <View style={styles.centrify}>
-              <Text> - </Text>
-            </View>
-            <View style={styles.cardFrame}>
-              {gameStatus.status !== 'clear' && (
-                <Image
-                  style={GlobalStyle.Card}
-                  source={
-                    showCard6
-                      ? imageMap[jackpotCards[0].image]
-                      : imageMap['Back']
-                  }
-                />
-              )}
-            </View>
-            <View style={styles.cardFrame}>
-              {gameStatus.status !== 'clear' && (
-                <Image
-                  style={GlobalStyle.Card}
-                  source={
-                    showCard7
-                      ? imageMap[jackpotCards[1].image]
-                      : imageMap['Back']
-                  }
-                />
-              )}
-            </View>
           </View>
         </View>
         <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>Player Hand:</Text>
-          {showTierResult && <Text>{pokerDictionary(playerResult)}</Text>}
-
           <View style={styles.cardView}>
-            <View
-              style={[
-                styles.dealerCardsView,
-                roundResult === 1 ? styles.winnerHiglight : null,
-              ]}>
-              <View>
-                <TouchableOpacity
-                  style={styles.cardFrame}
-                  onPress={() => flipCard(0)}>
-                  {gameStatus.status !== 'clear' && (
-                    <Image
-                      style={GlobalStyle.Card}
-                      source={
-                        showCard0
-                          ? imageMap[playerHand[0].image]
-                          : imageMap['Back']
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
+            <View>
+              <Text style={styles.resultTitle}>Player Hand:</Text>
+              {showTierResult && (
+                <Text style={styles.resultText}>
+                  {pokerDictionary(playerResult)}
+                </Text>
+              )}
+
+              <View
+                style={[
+                  styles.dealerCardsView,
+                  roundResult === 1 ? styles.winnerHiglight : null,
+                ]}>
+                <View>
+                  <TouchableOpacity
+                    style={styles.cardFrame}
+                    onPress={() => flipCard(0)}>
+                    {gameStatus.status !== 'clear' && (
+                      <Image
+                        style={GlobalStyle.Card}
+                        source={
+                          showCard0
+                            ? imageMap[playerHand[0].image]
+                            : imageMap['Back']
+                        }
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <TouchableOpacity
+                    style={styles.cardFrame}
+                    onPress={() => flipCard(1)}>
+                    {gameStatus.status !== 'clear' && (
+                      <Image
+                        style={GlobalStyle.Card}
+                        source={
+                          showCard1
+                            ? imageMap[playerHand[1].image]
+                            : imageMap['Back']
+                        }
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <TouchableOpacity
+                    style={styles.cardFrame}
+                    onPress={() => flipCard(2)}>
+                    {gameStatus.status !== 'clear' && (
+                      <Image
+                        style={GlobalStyle.Card}
+                        source={
+                          showCard2
+                            ? imageMap[playerHand[2].image]
+                            : imageMap['Back']
+                        }
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
+            </View>
+            <View style={styles.cardView}>
               <View>
-                <TouchableOpacity
-                  style={styles.cardFrame}
-                  onPress={() => flipCard(1)}>
-                  {gameStatus.status !== 'clear' && (
-                    <Image
-                      style={GlobalStyle.Card}
-                      source={
-                        showCard1
-                          ? imageMap[playerHand[1].image]
-                          : imageMap['Back']
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <View>
-                <TouchableOpacity
-                  style={styles.cardFrame}
-                  onPress={() => flipCard(2)}>
-                  {gameStatus.status !== 'clear' && (
-                    <Image
-                      style={GlobalStyle.Card}
-                      source={
-                        showCard2
-                          ? imageMap[playerHand[2].image]
-                          : imageMap['Back']
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
+                <Text style={styles.resultTitle}>Jackpot Hand:</Text>
+                <View style={[styles.dealerCardsView]}>
+                  <View style={[styles.cardFrame, styles.redBorder]}>
+                    {gameStatus.status !== 'clear' && (
+                      <Image
+                        style={GlobalStyle.Card}
+                        source={
+                          showCard6
+                            ? imageMap[jackpotCards[0].image]
+                            : imageMap['Back']
+                        }
+                      />
+                    )}
+                  </View>
+                  <View style={[styles.cardFrame, styles.redBorder]}>
+                    {gameStatus.status !== 'clear' && (
+                      <Image
+                        style={GlobalStyle.Card}
+                        source={
+                          showCard7
+                            ? imageMap[jackpotCards[1].image]
+                            : imageMap['Back']
+                        }
+                      />
+                    )}
+                  </View>
+                </View>
               </View>
             </View>
           </View>
-          {/* <Text style={styles.resultText}>
-              {showResult
-                ? camelCaseToWords(pokerCombination[playerResult])
-                : null}
-            </Text> */}
         </View>
       </View>
       <View style={styles.end}>
-        <View style={styles.bettingArea}>
-          <View style={styles.jackpotBet}>
-            {/* <TouchableOpacity>
-                <Text>{playJackpot}</Text>
-            </TouchableOpacity>
-            <Text style={{color: 'purple'}}>Click to play jackpot</Text> */}
-          </View>
-        </View>
         <View style={styles.bettingArea}>
           <View>
             <Text style={styles.blankInput}>
@@ -491,9 +492,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    textAlign: 'center',
   },
   resultText: {
     fontSize: 16,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: 'green',
@@ -532,7 +535,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#612d2d',
   },
   cardFrame: {
-    borderColor: 'black',
     borderWidth: 1,
     paddingHorizontal: 10,
     margin: 4,
@@ -540,6 +542,12 @@ const styles = StyleSheet.create({
     height: 90,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  blackBorder:{
+    borderColor: 'black',
+  },
+  redBorder:{
+    borderColor: 'red',
   },
   cardFont: {
     fontWeight: 'bold',
@@ -581,5 +589,8 @@ const styles = StyleSheet.create({
     borderColor: 'red',
     borderWidth: 1,
     margin: 2,
+  },
+  centreText: {
+    textAlign: 'center',
   },
 });
