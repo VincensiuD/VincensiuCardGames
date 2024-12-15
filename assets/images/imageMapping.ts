@@ -64,4 +64,5 @@ Diamond14: require('../images/14Diamond.png'),
 Spade14: require('../images/14Spade.png'),
 Heart14: require('../images/14Heart.png'),
 
+Back: require('../images/back.png'),
 };
