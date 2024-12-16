@@ -230,16 +230,16 @@ export function ThreeCardScreen() {
       }
       dispatch('dealt');
       const deck: Card[] = generateDeck();
-      //const shuffledDeck: Card[] = shuffleDeck(deck);
-       const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
-          {"image": "Club3", "suit": "Club", "value": 3},
-          {"image": "Diamond3", "suit": "Diamond", "value": 3},
-          {"image": "Heart3", "suit": "Heart", "value": 3},
-          {"image": "Diamond12", "suit": "Diamond", "value": 12},
-          {"image": "Spade12", "suit": "Spade", "value": 12},
-          {"image": "Heart12", "suit": "Heart", "value": 12},
-          {"image": "Spade3", "suit": "Spade", "value": 3},
-       ];
+      const shuffledDeck: Card[] = shuffleDeck(deck);
+    //    const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
+    //       {"image": "Club3", "suit": "Club", "value": 3},
+    //       {"image": "Diamond3", "suit": "Diamond", "value": 3},
+    //       {"image": "Heart3", "suit": "Heart", "value": 3},
+    //       {"image": "Diamond12", "suit": "Diamond", "value": 12},
+    //       {"image": "Spade12", "suit": "Spade", "value": 12},
+    //       {"image": "Heart12", "suit": "Heart", "value": 12},
+    //       {"image": "Spade3", "suit": "Spade", "value": 3},
+    //    ];
 
       const playerHandAfterShuffle = shuffledDeck.slice(0, 3);
       const dealerHandAfterShuffle = shuffledDeck.slice(3, 6);
@@ -374,6 +374,7 @@ export function ThreeCardScreen() {
               {playJackpot ? 10 : 'Jackpot'}
             </Text>
           </TouchableOpacity>
+          <Text  style={styles.blankInput}>{jackpotStatus.win > 0 ? jackpotStatus.win : ''}</Text>
         </View>
         <View style={styles.bettingArea}>
           <View>
