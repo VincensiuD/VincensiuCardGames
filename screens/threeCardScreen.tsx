@@ -9,13 +9,14 @@ import {
   View,
   Alert,
 } from 'react-native';
+import {CardFrame} from '../component';
 import {GlobalStyle, screenWidth} from '../global/StyleLibrary';
 import {Card, pokerDictionary} from '../global/interfaces';
-import {imageMap} from '../assets/images/imageMapping';
 import {generateDeck, shuffleDeck} from '../global/cardsLogic';
 import {
   AnteBonusPayout,
   checkPokerTier,
+  JackpotPayout,
   PairPlusPayout,
   ThreeCardWinLose,
 } from '../global/pokerLogic';
@@ -47,18 +48,17 @@ export function ThreeCardScreen() {
     setShowCard7,
   ];
 
-  const [anteBet, setAnteBet] = useState<string>('0');
+  const [anteBet, setAnteBet] = useState<string>('');
   const [playBet, setPlayBet] = useState<string>('0');
-  const [pairPlusBet, setPairPlusBet] = useState<string>('0');
-  const [playJackpot, setPlayJackpot] = useState<number>(0);
+  const [pairPlusBet, setPairPlusBet] = useState<string>('');
+  const [playJackpot, setPlayJackpot] = useState<boolean>(false);
 
-  const [bonusResult, setBonusResult] = useState<number>(0);
+  const [jackpotResult, setJackpotResult] = useState<number>(0);
   const [roundResult, setRoundResult] = useState<number>(2);
   const [anteWin, setAnteWin] = useState<string>('');
   const [playBetWin, setPlayBetWin] = useState<string>('0');
   const [anteBonusWin, setAnteBonusWin] = useState<string>('0');
   const [pairPlusWin, setPairPlusWin] = useState<string>('0');
-  const [bonusWin, setBonusWin] = useState<string>('0');
 
   const setWinningPayouts = [
     setAnteWin,
@@ -70,9 +70,11 @@ export function ThreeCardScreen() {
   const [playerResult, setPlayerResult] = useState<number>(0);
   const [dealerResult, setDealerResult] = useState<number>(0);
 
-  const [gameStatus, dispatch] = useReducer(reducer, {status: 'clear'});
+  const [gameStatus, dispatch] = useReducer(gameStatusReducer, {
+    status: 'clear',
+  });
 
-  function reducer(state, action: string) {
+  function gameStatusReducer(state, action: string) {
     switch (action) {
       case 'clear':
         return {status: 'clear'};
@@ -83,6 +85,12 @@ export function ThreeCardScreen() {
       default:
         return {status: 'clear'};
     }
+  }
+
+  const [jackpotStatus, jackpotDispatch] = useReducer(jackpotReducer, {win: 0});
+
+  function jackpotReducer(state, tier: number) {
+   return JackpotPayout(tier);
   }
 
   const [disableStart, setDisableStart] = useState<boolean>(false);
@@ -128,6 +136,11 @@ export function ThreeCardScreen() {
 
   function playerPlays(bool: boolean) {
     setDisableStart(true);
+
+    if(bool){
+        setPlayBet(anteBet);
+    }
+
     const dealerPokerTier = checkPokerTier(dealerHand);
 
     const delays = [200, 500, 800, 1100, 1400];
@@ -143,13 +156,17 @@ export function ThreeCardScreen() {
     setPlayerResult(playerPokerTier.tier);
 
     const finalResult = ThreeCardWinLose(dealerPokerTier, playerPokerTier);
-    setPlayBet(anteBet);
+
+    const jackpotPokerTier = checkPokerTier(jackpotHand);
+    setJackpotResult(jackpotPokerTier.tier);
 
     setTimeout(() => {
       setShowTierResult(true);
       setRoundResult(finalResult);
+      jackpotDispatch(jackpotPokerTier.tier);
 
       if (bool) {
+
         setPairPlusWin(
           PairPlusPayout(
             parseInt(pairPlusBet, 10),
@@ -180,6 +197,7 @@ export function ThreeCardScreen() {
     setRoundResult(3);
     setPlayBet('0');
     dispatch('clear');
+    jackpotDispatch(0);
 
     for (let index = 0; index < setShowCards.length; index++) {
       setShowCards[index](false);
@@ -202,15 +220,15 @@ export function ThreeCardScreen() {
       dispatch('dealt');
       const deck: Card[] = generateDeck();
       const shuffledDeck: Card[] = shuffleDeck(deck);
-      //  const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
-      //     {"image": "Club2", "suit": "Club", "value": 2},
-      //     {"image": "Diamond2", "suit": "Diamond", "value": 2},
-      //     {"image": "Heart3", "suit": "Heart", "value": 3},
-      //     {"image": "Diamond8", "suit": "Diamond", "value": 8},
-      //     {"image": "Spade12", "suit": "Spade", "value": 12},
-      //     {"image": "Heart12", "suit": "Heart", "value": 12},
-      //     {"image": "Spade3", "suit": "Spade", "value": 3},
-      //  ];
+    //    const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
+    //       {"image": "Spade3", "suit": "Spade", "value": 3},
+    //       {"image": "Spade14", "suit": "Spade", "value": 14},
+    //       {"image": "Heart3", "suit": "Heart", "value": 3},
+    //       {"image": "Diamond12", "suit": "Diamond", "value": 12},
+    //       {"image": "Spade12", "suit": "Spade", "value": 12},
+    //       {"image": "Spade5", "suit": "Spade", "value": 5},
+    //       {"image": "Spade4", "suit": "Spade", "value": 4},
+    //    ];
 
       const playerHandAfterShuffle = shuffledDeck.slice(0, 3);
       const dealerHandAfterShuffle = shuffledDeck.slice(3, 6);
@@ -232,157 +250,120 @@ export function ThreeCardScreen() {
     <View style={styles.container}>
       <View style={styles.body}>
         <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>Dealer Hand:</Text>
-          {showTierResult && (
+            <Text style={styles.resultTitle}>Dealer's Hand:</Text>
+            {showTierResult && (
             <Text style={styles.resultText}>
               {pokerDictionary(dealerResult)}
             </Text>
-          )}
-          <View style={styles.cardView}>
-            <View
-              style={[
-                styles.dealerCardsView,
-                roundResult === 0 ? styles.winnerHiglight : null,
-              ]}>
-              <View style={styles.cardFrame}>
-                {gameStatus.status !== 'clear' && (
-                  <Image
-                    style={GlobalStyle.Card}
-                    source={
-                      showCard3
-                        ? imageMap[dealerHand[0].image]
-                        : imageMap['Back']
-                    }
-                  />
-                )}
-              </View>
-              <View style={styles.cardFrame}>
-                {gameStatus.status !== 'clear' && (
-                  <Image
-                    style={GlobalStyle.Card}
-                    source={
-                      showCard4
-                        ? imageMap[dealerHand[1].image]
-                        : imageMap['Back']
-                    }
-                  />
-                )}
-              </View>
-              <View style={styles.cardFrame}>
-                {gameStatus.status !== 'clear' && (
-                  <Image
-                    style={GlobalStyle.Card}
-                    source={
-                      showCard5
-                        ? imageMap[dealerHand[2].image]
-                        : imageMap['Back']
-                    }
-                  />
-                )}
-              </View>
+            )}
+            <View style={styles.cardsView}>
+              <CardFrame
+                status={gameStatus.status}
+                winning={roundResult === 0}
+                showCard={showCard3}
+                imageUrl={
+                  dealerHand.length !== 0 ? dealerHand[0].image : 'Back'
+                }
+              />
+              <CardFrame
+                status={gameStatus.status}
+                winning={roundResult === 0}
+                showCard={showCard4}
+                imageUrl={
+                  dealerHand.length !== 0 ? dealerHand[1].image : 'Back'
+                }
+              />
+              <CardFrame
+                status={gameStatus.status}
+                winning={roundResult === 0}
+                showCard={showCard5}
+                imageUrl={
+                  dealerHand.length !== 0 ? dealerHand[2].image : 'Back'
+                }
+              />
             </View>
-          </View>
         </View>
-        <View style={styles.resultContainer}>
-          <View style={styles.cardView}>
-            <View>
-              <Text style={styles.resultTitle}>Player Hand:</Text>
-              {showTierResult && (
+        <View style={[styles.resultContainer]}>
+            <View style={styles.ThisWrapsJackpotAnd3CardsSection}>
+                <View style={styles.ThisWrapsPlayer3HandsSection}>
+                <Text style={styles.resultTitle}>Player's Hand:</Text>
+                {showTierResult && (
                 <Text style={styles.resultText}>
-                  {pokerDictionary(playerResult)}
+                    {pokerDictionary(playerResult)}
                 </Text>
-              )}
-
-              <View
-                style={[
-                  styles.dealerCardsView,
-                  roundResult === 1 ? styles.winnerHiglight : null,
-                ]}>
-                <View>
-                  <TouchableOpacity
-                    style={styles.cardFrame}
-                    onPress={() => flipCard(0)}>
-                    {gameStatus.status !== 'clear' && (
-                      <Image
-                        style={GlobalStyle.Card}
-                        source={
-                          showCard0
-                            ? imageMap[playerHand[0].image]
-                            : imageMap['Back']
-                        }
-                      />
-                    )}
-                  </TouchableOpacity>
+                )}
+                <View style={[styles.cardsView , jackpotStatus.win > 0 ? styles.jackpotHighlight : null]}>
+                    <CardFrame
+                    winning={roundResult === 1}
+                    status={gameStatus.status}
+                    showCard={showCard0}
+                    imageUrl={
+                      dealerHand.length !== 0 ? playerHand[0].image : 'Back'
+                    }
+                    flipCard={() => flipCard(0)}
+                    />
+                    <CardFrame
+                    winning={roundResult === 1}
+                    status={gameStatus.status}
+                    showCard={showCard1}
+                    imageUrl={
+                      dealerHand.length !== 0 ? playerHand[1].image : 'Back'
+                    }
+                    flipCard={() => flipCard(1)}
+                    />
+                    <CardFrame
+                    winning={roundResult === 1}
+                    status={gameStatus.status}
+                    showCard={showCard2}
+                    imageUrl={
+                      dealerHand.length !== 0 ? playerHand[2].image : 'Back'
+                    }
+                    flipCard={() => flipCard(2)}
+                    />
                 </View>
-                <View>
-                  <TouchableOpacity
-                    style={styles.cardFrame}
-                    onPress={() => flipCard(1)}>
-                    {gameStatus.status !== 'clear' && (
-                      <Image
-                        style={GlobalStyle.Card}
-                        source={
-                          showCard1
-                            ? imageMap[playerHand[1].image]
-                            : imageMap['Back']
-                        }
-                      />
-                    )}
-                  </TouchableOpacity>
                 </View>
-                <View>
-                  <TouchableOpacity
-                    style={styles.cardFrame}
-                    onPress={() => flipCard(2)}>
-                    {gameStatus.status !== 'clear' && (
-                      <Image
-                        style={GlobalStyle.Card}
-                        source={
-                          showCard2
-                            ? imageMap[playerHand[2].image]
-                            : imageMap['Back']
-                        }
-                      />
+                <View style={styles.ThisWrapsJackpotSection}>
+                <Text style={styles.resultTitle}>Jackpot Cards:</Text>
+                    {showTierResult && (
+                <Text style={styles.resultText}>
+                      {jackpotStatus.win > 0
+                        ? pokerDictionary(jackpotResult)
+                        : 'Jackpot not won'}
+                </Text>
                     )}
-                  </TouchableOpacity>
+                <View style={[styles.cardsView, jackpotStatus.win > 0 ? styles.jackpotHighlight : null]}>
+                        <CardFrame
+                        winning={jackpotStatus.win > 0}
+                        status={gameStatus.status}
+                        showCard={showCard7}
+                        imageUrl={
+                        dealerHand.length !== 0 ? jackpotCards[1].image : 'Back'
+                        }
+                    />
+                    <CardFrame
+                    winning={jackpotStatus.win > 0}
+                    status={gameStatus.status}
+                    showCard={showCard6}
+                    imageUrl={
+                      dealerHand.length !== 0 ? jackpotCards[0].image : 'Back'
+                    }
+                    />
                 </View>
-              </View>
+                </View>
             </View>
-            <View style={styles.cardView}>
-              <View>
-                <Text style={styles.resultTitle}>Jackpot Hand:</Text>
-                <View style={[styles.dealerCardsView]}>
-                  <View style={[styles.cardFrame, styles.redBorder]}>
-                    {gameStatus.status !== 'clear' && (
-                      <Image
-                        style={GlobalStyle.Card}
-                        source={
-                          showCard6
-                            ? imageMap[jackpotCards[0].image]
-                            : imageMap['Back']
-                        }
-                      />
-                    )}
-                  </View>
-                  <View style={[styles.cardFrame, styles.redBorder]}>
-                    {gameStatus.status !== 'clear' && (
-                      <Image
-                        style={GlobalStyle.Card}
-                        source={
-                          showCard7
-                            ? imageMap[jackpotCards[1].image]
-                            : imageMap['Back']
-                        }
-                      />
-                    )}
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
         </View>
-      </View>
-      <View style={styles.end}>
+    </View>
+    <View style={styles.end}>
+        <View style={styles.bettingArea}>
+          <TouchableOpacity
+            style={styles.jackpotBet}
+            onPress={() => setPlayJackpot(!playJackpot)}>
+            <Text style={styles.jackpotBetText}>
+              {playJackpot ? 10 : 'Jackpot'}
+            </Text>
+          </TouchableOpacity>
+          <Text  style={styles.blankInput}>{jackpotStatus.win > 0 ? jackpotStatus.win : ''}</Text>
+        </View>
         <View style={styles.bettingArea}>
           <View>
             <Text style={styles.blankInput}>
@@ -399,6 +380,7 @@ export function ThreeCardScreen() {
             style={styles.antePlayInput}
             keyboardType="numeric"
             placeholder="Ante"
+            placeholderTextColor={'#aaa'}
             onChangeText={e => setAnteBet(e)}
             value={anteBet}
           />
@@ -407,6 +389,7 @@ export function ThreeCardScreen() {
             editable={gameStatus.status === 'clear'}
             keyboardType="numeric"
             placeholder={'Pair Plus'}
+            placeholderTextColor={'#aaa'}
             onChangeText={e => setPairPlusBet(e)}
             value={pairPlusBet}
           />
@@ -426,7 +409,11 @@ export function ThreeCardScreen() {
             </Text>
           </View>
           <View>
-            <Text style={styles.antePlayInput}>
+            <Text
+              style={[
+                styles.antePlayInput,
+                playBet === '0' && styles.greyFont,
+              ]}>
               {playBet === '0' ? 'Play' : anteBet}
             </Text>
           </View>
@@ -479,7 +466,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#012140',
+    backgroundColor: '#003300',
   },
   title: {
     fontSize: 24,
@@ -513,7 +500,7 @@ const styles = StyleSheet.create({
     flex: 3,
   },
   end: {
-    flex: 3,
+    flex: 5,
     justifyContent: 'center',
     width: screenWidth,
   },
@@ -522,17 +509,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'papayawhip',
     justifyContent: 'center',
   },
-  cardView: {
+  cardsView: {
     flexDirection: 'row',
+    marginVertical: 12,
+    padding: 8,
   },
-  dealerCardsView: {
-    flexDirection: 'row',
-    marginVertical: 5,
-  },
-  winnerHiglight: {
-    borderWidth: 1,
-    borderColor: '#612d4b',
-    backgroundColor: '#612d2d',
+  jackpotHighlight: {
+    backgroundColor: '#da0c84',
+    paddingHorizontal: 10,
+    marginHorizontal: -10,
   },
   cardFrame: {
     borderWidth: 1,
@@ -543,10 +528,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  blackBorder:{
+  blackBorder: {
     borderColor: 'black',
   },
-  redBorder:{
+  redBorder: {
     borderColor: 'red',
   },
   cardFont: {
@@ -572,7 +557,6 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: 'bold',
   },
-  antePlayInputPlaceholder: {},
   blankInput: {
     borderRadius: 10,
     width: 64,
@@ -583,14 +567,31 @@ const styles = StyleSheet.create({
     color: 'red',
   },
   jackpotBet: {
-    width: 30,
-    height: 30,
+    width: 50,
+    height: 40,
     borderRadius: 10,
     borderColor: 'red',
     borderWidth: 1,
     margin: 2,
+    justifyContent: 'center',
+  },
+  jackpotBetText: {
+    color: 'black',
+    textAlign: 'center',
   },
   centreText: {
     textAlign: 'center',
+  },
+  greyFont: {
+    color: '#aaa',
+    textAlign: 'center',
+  },
+  ThisWrapsPlayer3HandsSection: {
+    marginRight: 16,
+  },
+  ThisWrapsJackpotSection: {
+  },
+  ThisWrapsJackpotAnd3CardsSection: {
+    flexDirection: 'row',
   },
 });
