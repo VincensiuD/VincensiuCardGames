@@ -16,6 +16,7 @@ import {generateDeck, shuffleDeck} from '../global/cardsLogic';
 import {
   AnteBonusPayout,
   checkPokerTier,
+  JackpotPayout,
   PairPlusPayout,
   ThreeCardWinLose,
 } from '../global/pokerLogic';
@@ -89,24 +90,7 @@ export function ThreeCardScreen() {
   const [jackpotStatus, jackpotDispatch] = useReducer(jackpotReducer, {win: 0});
 
   function jackpotReducer(state, tier: number) {
-    switch (tier) {
-      case 9:
-        return {win: 100000};
-      case 8:
-        return {win: 10000};
-      case 7:
-        return {win: 3000};
-      case 6:
-        return {win: 1500};
-      case 5:
-        return {win: 1000};
-      case 4:
-        return {win: 200};
-      case 3:
-        return {win: 50};
-      default:
-        return {win: 0};
-    }
+   return JackpotPayout(tier);
   }
 
   const [disableStart, setDisableStart] = useState<boolean>(false);
@@ -152,6 +136,11 @@ export function ThreeCardScreen() {
 
   function playerPlays(bool: boolean) {
     setDisableStart(true);
+
+    if(bool){
+        setPlayBet(anteBet);
+    }
+
     const dealerPokerTier = checkPokerTier(dealerHand);
 
     const delays = [200, 500, 800, 1100, 1400];
@@ -167,7 +156,6 @@ export function ThreeCardScreen() {
     setPlayerResult(playerPokerTier.tier);
 
     const finalResult = ThreeCardWinLose(dealerPokerTier, playerPokerTier);
-    setPlayBet(anteBet);
 
     const jackpotPokerTier = checkPokerTier(jackpotHand);
     setJackpotResult(jackpotPokerTier.tier);
@@ -178,6 +166,7 @@ export function ThreeCardScreen() {
       jackpotDispatch(jackpotPokerTier.tier);
 
       if (bool) {
+
         setPairPlusWin(
           PairPlusPayout(
             parseInt(pairPlusBet, 10),
@@ -232,13 +221,13 @@ export function ThreeCardScreen() {
       const deck: Card[] = generateDeck();
       const shuffledDeck: Card[] = shuffleDeck(deck);
     //    const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
-    //       {"image": "Club3", "suit": "Club", "value": 3},
-    //       {"image": "Diamond3", "suit": "Diamond", "value": 3},
+    //       {"image": "Spade3", "suit": "Spade", "value": 3},
+    //       {"image": "Spade14", "suit": "Spade", "value": 14},
     //       {"image": "Heart3", "suit": "Heart", "value": 3},
     //       {"image": "Diamond12", "suit": "Diamond", "value": 12},
     //       {"image": "Spade12", "suit": "Spade", "value": 12},
-    //       {"image": "Heart12", "suit": "Heart", "value": 12},
-    //       {"image": "Spade3", "suit": "Spade", "value": 3},
+    //       {"image": "Spade5", "suit": "Spade", "value": 5},
+    //       {"image": "Spade4", "suit": "Spade", "value": 4},
     //    ];
 
       const playerHandAfterShuffle = shuffledDeck.slice(0, 3);
@@ -261,7 +250,7 @@ export function ThreeCardScreen() {
     <View style={styles.container}>
       <View style={styles.body}>
         <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>Dealer Hand:</Text>
+            <Text style={styles.resultTitle}>Dealer's Hand:</Text>
             {showTierResult && (
             <Text style={styles.resultText}>
               {pokerDictionary(dealerResult)}
@@ -297,7 +286,7 @@ export function ThreeCardScreen() {
         <View style={[styles.resultContainer]}>
             <View style={styles.ThisWrapsJackpotAnd3CardsSection}>
                 <View style={styles.ThisWrapsPlayer3HandsSection}>
-                <Text style={styles.resultTitle}>Player Hand:</Text>
+                <Text style={styles.resultTitle}>Player's Hand:</Text>
                 {showTierResult && (
                 <Text style={styles.resultText}>
                     {pokerDictionary(playerResult)}
@@ -334,7 +323,7 @@ export function ThreeCardScreen() {
                 </View>
                 </View>
                 <View style={styles.ThisWrapsJackpotSection}>
-                <Text style={styles.resultTitle}>Jackpot Hand:</Text>
+                <Text style={styles.resultTitle}>Jackpot Cards:</Text>
                     {showTierResult && (
                 <Text style={styles.resultText}>
                       {jackpotStatus.win > 0
@@ -358,7 +347,6 @@ export function ThreeCardScreen() {
                     imageUrl={
                       dealerHand.length !== 0 ? jackpotCards[0].image : 'Back'
                     }
-                    flipCard={() => flipCard(6)}
                     />
                 </View>
                 </View>

@@ -249,3 +249,21 @@ export function ThreeCardWinLose(dealerResult, playerResult): number {
 
     }
 
+export function JackpotPayout(tier: number){
+    switch (tier) {
+        case 9:
+          return {win: 100000};
+        case 8:
+          return {win: 10000};
+        case 7:
+          return {win: 4000};
+        case 6:
+          return {win: 1500};
+        case 5:
+          return {win: 1000};
+        case 4:
+          return {win: 300};
+        default:
+          return {win: 0};
+      }
+}
