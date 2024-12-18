@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import React, {useState, useReducer} from 'react';
+import React, {useState, useReducer, useContext} from 'react';
 import {
   Image,
   StyleSheet,
@@ -13,6 +13,7 @@ import {CardFrame} from '../component';
 import {GlobalStyle, screenWidth} from '../global/StyleLibrary';
 import {Card, pokerDictionary} from '../global/interfaces';
 import {generateDeck, shuffleDeck} from '../global/cardsLogic';
+import { WalletContext } from '../global/context/Wallet';
 import {
   AnteBonusPayout,
   checkPokerTier,
@@ -73,6 +74,8 @@ export function ThreeCardScreen() {
   const [gameStatus, dispatch] = useReducer(gameStatusReducer, {
     status: 'clear',
   });
+
+  const wallet = useContext(WalletContext);
 
   function gameStatusReducer(state, action: string) {
     switch (action) {
