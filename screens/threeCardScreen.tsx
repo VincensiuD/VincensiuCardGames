@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
-import React, {useState, useReducer} from 'react';
+import React, {useState, useReducer, useContext} from 'react';
 import {
-  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +12,7 @@ import {CardFrame} from '../component';
 import {GlobalStyle, screenWidth} from '../global/StyleLibrary';
 import {Card, pokerDictionary} from '../global/interfaces';
 import {generateDeck, shuffleDeck} from '../global/cardsLogic';
+import { WalletContext } from '../global/context/Wallet';
 import {
   AnteBonusPayout,
   checkPokerTier,
@@ -55,10 +55,10 @@ export function ThreeCardScreen() {
 
   const [jackpotResult, setJackpotResult] = useState<number>(0);
   const [roundResult, setRoundResult] = useState<number>(2);
-  const [anteWin, setAnteWin] = useState<string>('');
-  const [playBetWin, setPlayBetWin] = useState<string>('0');
-  const [anteBonusWin, setAnteBonusWin] = useState<string>('0');
-  const [pairPlusWin, setPairPlusWin] = useState<string>('0');
+  const [anteWin, setAnteWin] = useState<number>(0);
+  const [playBetWin, setPlayBetWin] = useState<number>(0);
+  const [anteBonusWin, setAnteBonusWin] = useState<number>(0);
+  const [pairPlusWin, setPairPlusWin] = useState<number>(0);
 
   const setWinningPayouts = [
     setAnteWin,
@@ -73,6 +73,9 @@ export function ThreeCardScreen() {
   const [gameStatus, dispatch] = useReducer(gameStatusReducer, {
     status: 'clear',
   });
+
+  const wallet = useContext(WalletContext);
+  const money = wallet.money;
 
   function gameStatusReducer(state, action: string) {
     switch (action) {
@@ -137,8 +140,11 @@ export function ThreeCardScreen() {
   function playerPlays(bool: boolean) {
     setDisableStart(true);
 
+    const anteBetInt = parseInt(anteBet,10);
+
     if(bool){
         setPlayBet(anteBet);
+        wallet.setMoney(wallet.money - anteBetInt);
     }
 
     const dealerPokerTier = checkPokerTier(dealerHand);
@@ -167,25 +173,30 @@ export function ThreeCardScreen() {
 
       if (bool) {
 
-        setPairPlusWin(
-          PairPlusPayout(
-            parseInt(pairPlusBet, 10),
-            playerPokerTier.tier,
-          ).toString(),
+        const pairPlusPayout = PairPlusPayout(
+          parseInt(pairPlusBet, 10),
+          playerPokerTier.tier,
         );
+        setPairPlusWin(pairPlusPayout);
+
+        const anteBonusPayout = AnteBonusPayout(anteBetInt,playerPokerTier.tier);
+        setAnteBonusWin(anteBonusPayout);
+
+        const dealerQualifies = (dealerPokerTier.tier > 0 || dealerPokerTier.tieBreaker[0] > 11 ) ? true : false;
 
         if (finalResult === 1) {
-          setAnteWin(anteBet);
-          if (dealerPokerTier.tier > 0 || dealerPokerTier.tieBreaker[0] > 11) {
-            setPlayBetWin(anteBet);
-            setAnteBonusWin(
-              AnteBonusPayout(
-                parseInt(anteBet, 10),
-                playerPokerTier.tier,
-              ).toString(),
-            );
-          }
+          setAnteWin(anteBetInt);
+          dealerQualifies ? setPlayBetWin(anteBetInt) : null;
         }
+
+        const outcome = pairPlusPayout + anteBonusPayout +
+          (finalResult === 1 ? (dealerQualifies ? anteBetInt * 4 : anteBetInt * 3) :  0 * 1);
+
+        console.info('p: ', pairPlusPayout, 'a: ', anteBonusPayout, 'O: ', outcome);
+        console.info('wallet should be: ', wallet.money + '   outcome: ', outcome - anteBetInt);
+
+        wallet.setMoney(wallet.money + outcome - anteBetInt); //we minus here because setMoney is too slow
+
       }
       dispatch('complete');
     }, 1500);
@@ -204,31 +215,41 @@ export function ThreeCardScreen() {
     }
 
     for (let index = 0; index < setWinningPayouts.length; index++) {
-      setWinningPayouts[index]('0');
+      setWinningPayouts[index](0);
     }
   }
 
   function startGame(): boolean {
     try {
       const anteBetInt = parseInt(anteBet, 10);
+      const pairPlusBetInt = isNaN(parseInt(pairPlusBet,10)) ? 0 : parseInt(pairPlusBet,10);
+      const jackpotBetInt = playJackpot ? 10 : 0;
+      const totalCost: number = anteBetInt + pairPlusBetInt + jackpotBetInt;
       if (anteBetInt < 1 || isNaN(anteBetInt)) {
         Alert.alert('Warning!', 'Please put ante bet', [
           {text: 'OK', onPress: () => console.log('OK Pressed')},
         ]);
         return false;
       }
+      else if (totalCost > money){
+        Alert.alert('Warning!', 'Insufficient funds', [
+          {text: 'OK', onPress: () => console.log('OK Pressed')},
+        ]);
+        return false;
+      }
       dispatch('dealt');
+      wallet.setMoney(wallet.money - totalCost);
       const deck: Card[] = generateDeck();
-      const shuffledDeck: Card[] = shuffleDeck(deck);
-    //    const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
-    //       {"image": "Spade3", "suit": "Spade", "value": 3},
-    //       {"image": "Spade14", "suit": "Spade", "value": 14},
-    //       {"image": "Heart3", "suit": "Heart", "value": 3},
-    //       {"image": "Diamond12", "suit": "Diamond", "value": 12},
-    //       {"image": "Spade12", "suit": "Spade", "value": 12},
-    //       {"image": "Spade5", "suit": "Spade", "value": 5},
-    //       {"image": "Spade4", "suit": "Spade", "value": 4},
-    //    ];
+    //   const shuffledDeck: Card[] = shuffleDeck(deck);
+       const shuffledDeck: Card[] = [{"image": "Spade2", "suit": "Spade", "value": 2},
+          {"image": "Spade3", "suit": "Spade", "value": 3},
+          {"image": "Spade14", "suit": "Spade", "value": 14},
+          {"image": "Heart3", "suit": "Heart", "value": 3},
+          {"image": "Diamond12", "suit": "Diamond", "value": 12},
+          {"image": "Spade12", "suit": "Spade", "value": 12},
+          {"image": "Spade5", "suit": "Spade", "value": 5},
+          {"image": "Spade4", "suit": "Spade", "value": 4},
+       ];
 
       const playerHandAfterShuffle = shuffledDeck.slice(0, 3);
       const dealerHandAfterShuffle = shuffledDeck.slice(3, 6);
@@ -367,17 +388,17 @@ export function ThreeCardScreen() {
         <View style={styles.bettingArea}>
           <View>
             <Text style={styles.blankInput}>
-              {anteBonusWin === '0' ? null : anteBonusWin}
+              {anteBonusWin === 0 ? null : anteBonusWin}
             </Text>
           </View>
           <View>
             <Text style={styles.blankInput}>
-              {anteWin === '0' ? null : anteWin}
+              {anteWin === 0 ? null : anteWin}
             </Text>
           </View>
           <TextInput
             editable={gameStatus.status === 'clear'}
-            style={styles.antePlayInput}
+            style={[styles.antePlayInput, gameStatus.status === 'clear' ? null : styles.betBoxGrey]}
             keyboardType="numeric"
             placeholder="Ante"
             placeholderTextColor={'#aaa'}
@@ -395,7 +416,7 @@ export function ThreeCardScreen() {
           />
           <View>
             <Text style={styles.blankInput}>
-              {pairPlusWin === '0' ? null : pairPlusWin}
+              {pairPlusWin === 0 ? null : pairPlusWin}
             </Text>
           </View>
           <View>
@@ -405,7 +426,7 @@ export function ThreeCardScreen() {
         <View style={styles.bettingArea}>
           <View>
             <Text style={styles.blankInput}>
-              {playBetWin === '0' ? null : anteBet}
+              {playBetWin === 0 ? null : anteBet}
             </Text>
           </View>
           <View>
@@ -456,6 +477,9 @@ export function ThreeCardScreen() {
               <Text>Clear</Text>
             </TouchableOpacity>
           )}
+        </View>
+        <View>
+          <Text>$ {wallet.money}</Text>
         </View>
       </View>
     </View>
@@ -585,6 +609,9 @@ const styles = StyleSheet.create({
   greyFont: {
     color: '#aaa',
     textAlign: 'center',
+  },
+  betBoxGrey: {
+    backgroundColor: 'grey'
   },
   ThisWrapsPlayer3HandsSection: {
     marginRight: 16,

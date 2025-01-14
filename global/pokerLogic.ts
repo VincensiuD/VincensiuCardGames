@@ -175,23 +175,27 @@ export function checkPokerTier(cards: Card[]): PokerTierResult {
 }
 
 export function PairPlusPayout(bet: number, tier: number){
+    if(isNaN(bet)){
+      return 0;
+    }
     switch(tier){
         case 1:
-        return bet;
+        return bet * 2;
         case 3:
-        return 30 * bet;
+        return 30 * bet + bet;
         case 5:
-        return 4 * bet;
+        return 4 * bet + bet;
         case 4:
-        return 6 * bet;
+        return 6 * bet + bet;
         case 8:
-        return 40 * bet;
+        return 40 * bet + bet;
         default:
         return 0;
     }
 }
 
 export function AnteBonusPayout(bet: number, tier: number){
+
     switch(tier){
         case 4:
         return bet;
