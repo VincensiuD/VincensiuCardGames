@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import * as React from 'react';
 import {SettingsProvider} from './global/context/Settings';
 import {WalletProvider} from './global/context/Wallet';

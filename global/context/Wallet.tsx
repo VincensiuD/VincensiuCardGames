@@ -11,7 +11,12 @@ export const WalletContext = createContext<iWalletContext>({});
 type WalletProps = {children: React.ReactElement};
 
 export const WalletProvider = ({children}: WalletProps): ReactElement => {
-  const [money, setMoney] = useState<number>(0);
+
+  const [money, setMoney] = useState<number>(400);
+
+  function getMoneyFromDB(){
+    // function to obtain money from DB.
+  }
 
   return (
     <WalletContext.Provider
