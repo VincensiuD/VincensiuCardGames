@@ -9,6 +9,11 @@ export interface PokerTierResult {
   tieBreaker: number[];
 }
 
+export interface JackpotPayoutObject {
+  tier: string;
+  win: number;
+}
+
 export function pokerDictionary(tier: number) {
   switch (tier) {
     case 1:

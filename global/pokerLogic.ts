@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import {Card, PokerTierResult} from './interfaces';
+import {Card, JackpotPayoutObject, pokerDictionary, PokerTierResult} from './interfaces';
 
 export function checkFlush(cards: Card[]): boolean {
   for (let index = 1; index < cards.length; index++) {
@@ -253,21 +253,22 @@ export function ThreeCardWinLose(dealerResult, playerResult): number {
 
     }
 
-export function JackpotPayout(tier: number){
+export function JackpotPayout(tier: number): JackpotPayoutObject{
+    const tierString = pokerDictionary(tier);
     switch (tier) {
         case 9:
-          return {win: 100000};
+          return {win: 100000, tier: tierString};
         case 8:
-          return {win: 10000};
+          return {win: 10000, tier: tierString};
         case 7:
-          return {win: 4000};
+          return {win: 3000, tier: tierString};
         case 6:
-          return {win: 1500};
+          return {win: 750, tier: tierString};
         case 5:
-          return {win: 1000};
+          return {win: 500, tier: tierString};
         case 4:
-          return {win: 300};
+          return {win: 200, tier: tierString};
         default:
-          return {win: 0};
+          return {win: 0, tier: tierString};
       }
 }
